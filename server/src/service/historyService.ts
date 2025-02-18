@@ -2,8 +2,10 @@ import path from "node:path";
 import fs from "node:fs/promises";
 // TODO: Define a City class with name and id properties
 class City {
-  name: string;
-  id: string;
+  constructor(
+    public name: string,
+    public id: string
+  ) {}
 }
 
 // TODO: Complete the HistoryService class
@@ -32,7 +34,7 @@ export default class HistoryService {
   static async addCity(city: string) {
     const historyService = new HistoryService();
     await historyService.read();
-    historyService.cities.push({ name: city, id: historyService.cities.length + 1 });
+    historyService.cities.push(new City(city, String(historyService.cities.length + 1)));
     await historyService.write(historyService.cities);
   }
   // * BONUS TODO: Define a removeCity method that removes a city from the searchHistory.json file
@@ -43,5 +45,3 @@ export default class HistoryService {
     await historyService.write(historyService.cities);
   }
 }
-
-export default HistoryService;
