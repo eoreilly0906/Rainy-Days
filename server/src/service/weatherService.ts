@@ -20,8 +20,8 @@ class Weather {
 
 export default class WeatherService {
   // TODO: Define the baseURL, API key, and city name properties
-  private baseURL = 'https://api.openweathermap.org/data/2.5';
-  private apiKey = process.env.OPENWEATHER_API_KEY;
+  baseURL = 'https://api.openweathermap.org/data/2.5';
+  apiKey = process.env.OPENWEATHER_API_KEY;
   // TODO: Create fetchLocationData method
   private async fetchLocationData(query: string) {
     const response = await fetch(`${this.baseURL}/geo/1.0/direct?q=${query}&limit=1&appid=${this.apiKey}`);
@@ -57,10 +57,23 @@ export default class WeatherService {
     return weatherData.map((day) => new Weather(day.main.temp, day.weather[0].description, day.weather[0].icon));
   }
   // TODO: Complete getWeatherForCity method
-  async getWeatherForCity(city: string) {
-    const coordinates = await this.fetchAndDestructureLocationData(city);
-    const currentWeather = await this.fetchCurrentWeather(coordinates);
-    const forecast = await this.fetchForecast(coordinates);
+  static async getWeatherForCity(city: string) {
+    const weatherService = new WeatherService();
+    const coordinates = await weatherService.fetchAndDestructureLocationData(city);
+    const currentWeather = await weatherService.fetchCurrentWeather(coordinates);
+    const forecast = await weatherService.fetchForecast(coordinates);
     return { currentWeather, forecast };
+  }
+
+  private async fetchCurrentWeather(coordinates: Coordinates) {
+    const response = await fetch(this.buildWeatherQuery(coordinates));
+    const data = await response.json();
+    return this.parseCurrentWeather(data);
+  }
+
+  private async fetchForecast(coordinates: Coordinates) {
+    const response = await fetch(`${this.baseURL}/forecast?lat=${coordinates.latitude}&lon=${coordinates.longitude}&appid=${this.apiKey}`);
+    const data = await response.json();
+    return this.buildForecastArray(await this.fetchCurrentWeather(coordinates), data.list);
   }
 }
