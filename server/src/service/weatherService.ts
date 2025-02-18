@@ -1,6 +1,3 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
 // TODO: Define an interface for the Coordinates object
 interface Coordinates { 
   latitude: number;
@@ -21,7 +18,7 @@ class Weather {
 export default class WeatherService {
   // TODO: Define the baseURL, API key, and city name properties
   baseURL = 'https://api.openweathermap.org/data/2.5';
-  apiKey = process.env.OPENWEATHER_API_KEY;
+  apiKey = '42a818799edaf4fb33ab8e27bde181da';
   // TODO: Create fetchLocationData method
   private async fetchLocationData(query: string) {
     const response = await fetch(`${this.baseURL}/geo/1.0/direct?q=${query}&limit=1&appid=${this.apiKey}`);
@@ -34,10 +31,6 @@ export default class WeatherService {
       latitude: locationData.lat,
       longitude: locationData.lon
     };
-  }
-  // TODO: Create buildGeocodeQuery method
-  private buildGeocodeQuery(city: string): string {
-    return `${this.baseURL}/geo/1.0/direct?q=${city}&limit=1&appid=${this.apiKey}`;
   }
   // TODO: Create buildWeatherQuery method
   private buildWeatherQuery(coordinates: Coordinates): string {
@@ -53,7 +46,7 @@ export default class WeatherService {
     return new Weather(response.main.temp, response.weather[0].description, response.weather[0].icon);
   }
   // TODO: Complete buildForecastArray method
-  private buildForecastArray(currentWeather: Weather, weatherData: any[]) {
+  private buildForecastArray(_currentWeather: Weather, weatherData: any[]) {
     return weatherData.map((day) => new Weather(day.main.temp, day.weather[0].description, day.weather[0].icon));
   }
   // TODO: Complete getWeatherForCity method

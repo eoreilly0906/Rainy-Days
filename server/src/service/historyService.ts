@@ -38,6 +38,9 @@ export default class HistoryService {
     await historyService.write(historyService.cities);
   }
   // * BONUS TODO: Define a removeCity method that removes a city from the searchHistory.json file
+  // 1. Reading current cities from the file via read()
+  // 2. Filtering out the city with matching id
+  // 3. Writing the filtered array back to the file via write()
   static async removeCity(id: string) {
     const historyService = new HistoryService();
     await historyService.read();
