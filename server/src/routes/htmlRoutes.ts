@@ -7,11 +7,13 @@ const router = Router();
 
 // TODO: Define route to serve index.html
 router.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  console.log('Serving index.html');
+  res.sendFile(path.join(__dirname, './Users/edwardoreilly/Desktop/bootcamp/Rainy-Days/client/index.html.'));
 });
 
 // TODO: Define route to serve history.html
-router.get('/history', (_req, res) => {
+router.get('/api/history', (_req, res) => {
+  console.log('Serving history.html');
   res.sendFile(path.join(__dirname, '../public/history.html'));
 });
 export default router;

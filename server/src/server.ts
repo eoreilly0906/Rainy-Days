@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 dotenv.config();
 
 // Import the routes
-import routes from './routes/index.js';
+import weatherRoutes from './routes/api/weatherRoutes.js';
+import htmlRoutes from './routes/htmlRoutes.js';
+import historyRoutes from './routes/api/historyRoutes.js';
 
 const app = express();
 
@@ -20,7 +22,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));        
 
 // API routes - let's add a prefix
-app.use('/api', routes);
+app.use('/api', weatherRoutes);
+app.use('/api', htmlRoutes);
+app.use('/api', historyRoutes);
 
 // Serve static files - only need this once
 app.use(express.static(path.join(__dirname, '../../client/dist')));

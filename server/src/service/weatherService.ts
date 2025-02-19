@@ -14,11 +14,11 @@ class Weather {
 }
 
 // TODO: Complete the WeatherService class
-
-export default class WeatherService {
+class WeatherService {
   // TODO: Define the baseURL, API key, and city name properties
   baseURL = 'https://api.openweathermap.org/data/2.5';
   apiKey = '42a818799edaf4fb33ab8e27bde181da';
+  cityName = '';
   // TODO: Create fetchLocationData method
   private async fetchLocationData(query: string) {
     const response = await fetch(`${this.baseURL}/geo/1.0/direct?q=${query}&limit=1&appid=${this.apiKey}`);
@@ -70,3 +70,5 @@ export default class WeatherService {
     return this.buildForecastArray(await this.fetchCurrentWeather(coordinates), data.list);
   }
 }
+
+export default WeatherService;
