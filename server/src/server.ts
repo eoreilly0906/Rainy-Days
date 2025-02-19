@@ -15,18 +15,18 @@ const PORT = process.env.PORT || 3001;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// TODO: Serve static files of entire client dist folder
-app.use(express.static(path.join(__dirname, '../client/dist')));
-
-// TODO: Implement middleware for parsing JSON and urlencoded form data
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));        
 
-// TODO: Implement middleware to connect the routes
-app.use(routes);
+// API routes - let's add a prefix
+app.use('/api', routes);
 
-// TODO: Implement middleware to serve the static files
-app.use(express.static(path.join(__dirname, '../client/dist')));
+// Serve static files - only need this once
+app.use(express.static(path.join(__dirname, '../../client/dist')));
 
-// Start the server on the port
-app.listen(PORT, () => console.log(`Listening on PORT: ${PORT}`));
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+  console.log('API endpoints available at /api/*');
+});
