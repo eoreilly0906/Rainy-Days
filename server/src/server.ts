@@ -23,8 +23,19 @@ app.use(express.urlencoded({ extended: true }));
 
 // API routes - let's add a prefix
 app.use('/api', weatherRoutes);
-app.use('/api', htmlRoutes);
 app.use('/api', historyRoutes);
+app.use('/api', htmlRoutes);
+
+app.post('/api/weather', async (req, res) => {
+  const { city } = req.body;
+
+  if (!city) {
+    return res.status(400).json({ error: 'City is required' });
+  }
+
+  // Example response (replace this with your real API call)
+  res.json({ city, weather: 'Sunny', temp: 75 });
+});
 
 // Serve static files - only need this once
 app.use(express.static(path.join(__dirname, '../../client/dist')));

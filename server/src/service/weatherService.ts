@@ -13,20 +13,45 @@ class Weather {
   ) {}
 }
 
+interface WeatherApiResponse {
+  main: {
+    temp: number;
+  };
+  weather: Array<{
+    description: string;
+    icon: string;
+  }>;
+}
+
+interface LocationApiResponse {
+  lat: number;
+  lon: number;
+  name: string;
+}
+
 // TODO: Complete the WeatherService class
 class WeatherService {
   // TODO: Define the baseURL, API key, and city name properties
-  baseURL = 'https://api.openweathermap.org/data/2.5';
-  apiKey = '42a818799edaf4fb33ab8e27bde181da';
-  cityName = '';
+  private baseURL = 'https://api.openweathermap.org/data/2.5';
+  private apiKey = '42a818799edaf4fb33ab8e27bde181da';
+  private units = 'metric'; // Add units parameter for Celsius
   // TODO: Create fetchLocationData method
-  private async fetchLocationData(query: string) {
-    const response = await fetch(`${this.baseURL}/geo/1.0/direct?q=${query}&limit=1&appid=${this.apiKey}`);
-    const data = await response.json();
-    return data[0];
+  private async fetchLocationData(query: string): Promise<LocationApiResponse> {
+    try {
+      const response = await fetch(`${this.baseURL}/geo/1.0/direct?q=${query}&limit=1&appid=${this.apiKey}`);
+      if (!response.ok) throw new Error(`Failed to fetch location: ${response.statusText}`);
+      const data = await response.json();
+      if (!data.length) throw new Error(`No location found for: ${query}`);
+      return data[0];
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(`Location fetch failed: ${error.message}`);
+      }
+      throw new Error('Location fetch failed: Unknown error');
+    }
   }
   // TODO: Create destructureLocationData method
-  private destructureLocationData(locationData: any): Coordinates {
+  private destructureLocationData(locationData: LocationApiResponse): Coordinates {
     return {
       latitude: locationData.lat,
       longitude: locationData.lon
@@ -58,16 +83,34 @@ class WeatherService {
     return { currentWeather, forecast };
   }
 
-  private async fetchCurrentWeather(coordinates: Coordinates) {
-    const response = await fetch(this.buildWeatherQuery(coordinates));
-    const data = await response.json();
-    return this.parseCurrentWeather(data);
+  private async fetchCurrentWeather(coordinates: Coordinates): Promise<Weather> {
+    try {
+      const response = await fetch(`${this.buildWeatherQuery(coordinates)}&units=${this.units}`);
+      if (!response.ok) throw new Error(`Failed to fetch weather: ${response.statusText}`);
+      const data: WeatherApiResponse = await response.json();
+      return this.parseCurrentWeather(data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(`Weather fetch failed: ${error.message}`);
+      }
+      throw new Error('Weather fetch failed: Unknown error');
+    }
   }
 
   private async fetchForecast(coordinates: Coordinates) {
-    const response = await fetch(`${this.baseURL}/forecast?lat=${coordinates.latitude}&lon=${coordinates.longitude}&appid=${this.apiKey}`);
-    const data = await response.json();
-    return this.buildForecastArray(await this.fetchCurrentWeather(coordinates), data.list);
+    try {
+      const response = await fetch(
+        `${this.baseURL}/forecast?lat=${coordinates.latitude}&lon=${coordinates.longitude}&appid=${this.apiKey}&units=${this.units}`
+      );
+      if (!response.ok) throw new Error(`Failed to fetch forecast: ${response.statusText}`);
+      const data = await response.json();
+      return this.buildForecastArray(await this.fetchCurrentWeather(coordinates), data.list);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(`Forecast fetch failed: ${error.message}`);
+      }
+      throw new Error('Forecast fetch failed: Unknown error');
+    }
   }
 }
 

@@ -12,7 +12,7 @@ router.get('/', (_req, res) => {
 });
 
 // TODO: Define route to serve history.html
-router.get('/api/history', (_req, res) => {
+router.get('/api/weather/history', (_req, res) => {
   console.log('Serving history.html');
   res.sendFile(path.join(__dirname, '../public/history.html'));
 });
