@@ -24,9 +24,6 @@ const tempEl: HTMLParagraphElement = document.getElementById(
 const windEl: HTMLParagraphElement = document.getElementById(
   'wind'
 ) as HTMLParagraphElement;
-const humidityEl: HTMLParagraphElement = document.getElementById(
-  'humidity'
-) as HTMLParagraphElement;
 
 /*
 
@@ -35,6 +32,11 @@ API Calls
 */
 
 const fetchWeather = async (cityName: string) => {
+  if (!window.fetch) {
+    console.error('Fetch API is not supported in this browser');
+    return;
+  }
+
   const response = await fetch('http://localhost:3001/api/weather', {
     method: 'POST',
     headers: {
@@ -43,12 +45,22 @@ const fetchWeather = async (cityName: string) => {
     body: JSON.stringify({ city: cityName }),
   });
 
-  const weatherData = await response.json();
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
 
+  const weatherData = await response.json();
   console.log('weatherData: ', weatherData);
 
-  renderCurrentWeather(weatherData[0]);
-  renderForecast(weatherData.slice(1));
+  // Check if weatherData has the expected structure
+  if (weatherData && weatherData.currentWeather) {
+    renderCurrentWeather(weatherData.currentWeather);
+    if (weatherData.forecast) {
+      renderForecast(weatherData.forecast);
+    }
+  } else {
+    throw new Error('Invalid weather data format');
+  }
 };
 
 const fetchSearchHistory = async () => {
@@ -77,25 +89,27 @@ Render Functions
 */
 
 const renderCurrentWeather = (currentWeather: any): void => {
-  const { city, date, icon, iconDescription, tempF, windSpeed, humidity } =
-    currentWeather;
+  const {
+    city,
+    temperature,
+    description,
+    icon,
+  } = currentWeather || {};
 
-  // convert the following to typescript
-  heading.textContent = `${city} (${date})`;
+  heading.textContent = `${city}`;
   weatherIcon.setAttribute(
     'src',
     `https://openweathermap.org/img/w/${icon}.png`
   );
-  weatherIcon.setAttribute('alt', iconDescription);
+  weatherIcon.setAttribute('alt', description);
   weatherIcon.setAttribute('class', 'weather-img');
   heading.append(weatherIcon);
-  tempEl.textContent = `Temp: ${tempF}°F`;
-  windEl.textContent = `Wind: ${windSpeed} MPH`;
-  humidityEl.textContent = `Humidity: ${humidity} %`;
+  tempEl.textContent = `Temp: ${temperature}°C`;
+  windEl.textContent = `Description: ${description}`;
 
   if (todayContainer) {
     todayContainer.innerHTML = '';
-    todayContainer.append(heading, tempEl, windEl, humidityEl);
+    todayContainer.append(heading, tempEl, windEl);
   }
 };
 
@@ -118,21 +132,24 @@ const renderForecast = (forecast: any): void => {
 };
 
 const renderForecastCard = (forecast: any) => {
-  const { date, icon, iconDescription, tempF, windSpeed, humidity } = forecast;
+  const { temperature, description, icon } = forecast;
 
-  const { col, cardTitle, weatherIcon, tempEl, windEl, humidityEl } =
+  const { col, cardTitle, weatherIcon, tempEl, windEl } =
     createForecastCard();
 
-  // Add content to elements
-  cardTitle.textContent = date;
+  cardTitle.textContent = new Date().toLocaleDateString();
   weatherIcon.setAttribute(
     'src',
     `https://openweathermap.org/img/w/${icon}.png`
   );
-  weatherIcon.setAttribute('alt', iconDescription);
-  tempEl.textContent = `Temp: ${tempF} °F`;
-  windEl.textContent = `Wind: ${windSpeed} MPH`;
-  humidityEl.textContent = `Humidity: ${humidity} %`;
+  weatherIcon.setAttribute('alt', description);
+  tempEl.textContent = `Temp: ${temperature}°C`;
+  windEl.textContent = `Description: ${description}`;
+  
+  const descEl = document.createElement('p');
+  descEl.textContent = description;
+  descEl.classList.add('card-text');
+  col.querySelector('.card-body')?.appendChild(descEl);
 
   if (forecastContainer) {
     forecastContainer.append(col);
@@ -172,11 +189,10 @@ const createForecastCard = () => {
   const weatherIcon = document.createElement('img');
   const tempEl = document.createElement('p');
   const windEl = document.createElement('p');
-  const humidityEl = document.createElement('p');
 
   col.append(card);
   card.append(cardBody);
-  cardBody.append(cardTitle, weatherIcon, tempEl, windEl, humidityEl);
+  cardBody.append(cardTitle, weatherIcon, tempEl, windEl);
 
   col.classList.add('col-auto');
   card.classList.add(
@@ -190,7 +206,6 @@ const createForecastCard = () => {
   cardTitle.classList.add('card-title');
   tempEl.classList.add('card-text');
   windEl.classList.add('card-text');
-  humidityEl.classList.add('card-text');
 
   return {
     col,
@@ -198,7 +213,6 @@ const createForecastCard = () => {
     weatherIcon,
     tempEl,
     windEl,
-    humidityEl,
   };
 };
 
@@ -289,3 +303,84 @@ searchForm?.addEventListener('submit', handleSearchFormSubmit);
 searchHistoryContainer?.addEventListener('click', handleSearchHistoryClick);
 
 getAndRenderHistory();
+
+// Add this function to show errors to users
+function showError(message: string) {
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'error-message';
+  errorDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #ff5252;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+  `;
+  errorDiv.textContent = message;
+
+  // Add close button
+  const closeButton = document.createElement('button');
+  closeButton.innerHTML = '×';
+  closeButton.style.cssText = `
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+  `;
+  closeButton.onclick = () => errorDiv.remove();
+  errorDiv.appendChild(closeButton);
+
+  document.body.appendChild(errorDiv);
+
+  // Auto-remove after 5 seconds
+  setTimeout(() => errorDiv.remove(), 5000);
+}
+
+// Single declaration of checkWeatherAPI
+export const checkWeatherAPI = () => {
+  const apiUrl = '/api/weather';
+  fetch(apiUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(
+          response.status === 404 ? 'Resource not found' :
+          response.status === 403 ? 'Access denied' :
+          response.status === 500 ? 'Server error' :
+          `HTTP error! status: ${response.status}`
+        );
+      }
+      if (response.headers.get('content-type')?.indexOf('application/json') === -1) {
+        throw new Error('Invalid response format');
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (!data) {
+        throw new Error('No data received');
+      }
+      try {
+        const { currentWeather, forecast } = data;
+        console.log({ currentWeather, forecast });
+      } catch (err) {
+        throw new Error('Invalid data format');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showError(error.message || 'An error occurred while fetching data');
+    });
+};
+
+// Add polyfill check at initialization
+if (!window.fetch) {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/whatwg-fetch@3.6.2/dist/fetch.umd.min.js';
+  document.head.appendChild(script);
+}

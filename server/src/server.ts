@@ -2,46 +2,53 @@ import dotenv from 'dotenv';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-dotenv.config();
 
 // Import the routes
 import weatherRoutes from './routes/api/weatherRoutes.js';
 import htmlRoutes from './routes/htmlRoutes.js';
 import historyRoutes from './routes/api/historyRoutes.js';
 
-const app = express();
+// Load environment variables first
+dotenv.config();
 
+// Check if API key exists
+if (!process.env.OPENWEATHER_API_KEY) {
+  console.error('ERROR: OPENWEATHER_API_KEY is not set in .env file');
+  process.exit(1);
+}
+
+const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Get the equivalent of __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));        
+try {
+  // Middleware
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));        
 
-// API routes - let's add a prefix
-app.use('/api', weatherRoutes);
-app.use('/api', historyRoutes);
-app.use('/api', htmlRoutes);
+  // API routes
+  app.use('/api', weatherRoutes);
+  app.use('/api', historyRoutes);
+  app.use('/api', htmlRoutes);
 
-app.post('/api/weather', async (req, res) => {
-  const { city } = req.body;
+  // Serve static files
+  app.use(express.static(path.join(__dirname, '../../client/dist')));
 
-  if (!city) {
-    return res.status(400).json({ error: 'City is required' });
-  }
+  // Error handling middleware
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('Server Error:', err);
+    res.status(500).json({ error: err.message || 'Internal Server Error' });
+  });
 
-  // Example response (replace this with your real API call)
-  res.json({ city, weather: 'Sunny', temp: 75 });
-});
-
-// Serve static files - only need this once
-app.use(express.static(path.join(__dirname, '../../client/dist')));
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-  console.log('API endpoints available at /api/*');
-});
+  // Start the server
+  app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`);
+    console.log('API endpoints available at /api/*');
+  });
+} catch (error) {
+  console.error('Server startup error:', error);
+  process.exit(1);
+}
