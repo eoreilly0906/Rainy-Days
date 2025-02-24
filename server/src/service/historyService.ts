@@ -19,24 +19,46 @@ export interface HistoryEntry {
     result: any;
 }
 
-// This is a simple in-memory store - you might want to replace this with a database
-let history: HistoryEntry[] = [];
-
-export const addToHistory = (entry: Omit<HistoryEntry, 'id'>) => {
-    const newEntry: HistoryEntry = {
-        ...entry,
-        id: String(Date.now())
-    };
-    history.push(newEntry);
-    return newEntry;
+export const addToHistory = async (entry: Omit<HistoryEntry, 'id'>): Promise<HistoryEntry> => {
+    try {
+        const history = await getHistory();
+        const newEntry: HistoryEntry = {
+            ...entry,
+            id: String(Date.now())
+        };
+        history.push(newEntry);
+        await fs.writeFile(FILE_PATH, JSON.stringify(history, null, 2));
+        return newEntry;
+    } catch (error) {
+        console.error("Error adding to history:", error);
+        throw error;
+    }
 };
 
 export const getHistory = async (): Promise<HistoryEntry[]> => {
-    return history;
+    try {
+        const data = await fs.readFile(FILE_PATH, "utf8");
+        return JSON.parse(data) as HistoryEntry[];
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            // If file doesn't exist, create it with empty array
+            await fs.writeFile(FILE_PATH, '[]');
+            return [];
+        }
+        console.error("Error reading history:", error);
+        throw error;
+    }
 };
 
 export const removeFromHistory = async (id: string): Promise<void> => {
-    history = history.filter(entry => entry.id !== id);
+    try {
+        const history = await getHistory();
+        const filteredHistory = history.filter(entry => entry.id !== id);
+        await fs.writeFile(FILE_PATH, JSON.stringify(filteredHistory, null, 2));
+    } catch (error) {
+        console.error("Error removing from history:", error);
+        throw error;
+    }
 };
 
 export default class HistoryService {
