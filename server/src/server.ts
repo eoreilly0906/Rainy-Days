@@ -2,11 +2,10 @@ import dotenv from 'dotenv';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 // Import the routes
-import weatherRoutes from './routes/api/weatherRoutes.js';
-import htmlRoutes from './routes/htmlRoutes.js';
-import historyRoutes from './routes/api/historyRoutes.js';
+import apiRoutes from './routes/api/index.js';
 
 // Load environment variables first
 dotenv.config();
@@ -24,17 +23,45 @@ const PORT = process.env.PORT || 3001;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Middleware
+// Calculate the correct path to the client dist directory
+// When running from dist/server.js, we need to go up 2 levels to get to server root
+// then up one more level to project root, then into client/dist
+const clientDistPath = path.resolve(__dirname, '..', '..', 'client', 'dist');
+
+// Verify the client dist directory exists
+if (!fs.existsSync(clientDistPath)) {
+  console.error(`Client dist directory not found at: ${clientDistPath}`);
+  console.error('Please ensure you have built the client application');
+  process.exit(1);
+}
+
+// Verify index.html exists
+const indexPath = path.join(clientDistPath, 'index.html');
+if (!fs.existsSync(indexPath)) {
+  console.error(`index.html not found at: ${indexPath}`);
+  console.error('Please ensure you have built the client application');
+  process.exit(1);
+}
+
+// Logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
+// Body parser middleware MUST come before routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));        
 
 // API routes
-app.use('/api', weatherRoutes);
-app.use('/api', historyRoutes);
-app.use('/api', htmlRoutes);
+app.use('/api', apiRoutes);
 
-// Serve static files
-app.use(express.static(path.join(__dirname, '../../client/dist')));
+// Static files and catch-all route should come after API routes
+app.use(express.static(clientDistPath));
+
+app.get('*', (req, res) => {
+  res.sendFile(indexPath);
+});
 
 // Error handling middleware
 app.use((err: any, req: any, res: any, next: any) => {
@@ -46,4 +73,6 @@ app.use((err: any, req: any, res: any, next: any) => {
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
   console.log('API endpoints available at /api/*');
+  console.log(`Serving static files from: ${clientDistPath}`);
+  console.log(`Index file location: ${indexPath}`);
 });

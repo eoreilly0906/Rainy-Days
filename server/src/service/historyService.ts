@@ -5,12 +5,39 @@ import { fileURLToPath } from "url";
 // Fix __dirname issue for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const FILE_PATH = path.join(__dirname, "../data/searchHistory.json");
+const FILE_PATH = '/Users/edwardoreilly/Desktop/bootcamp/Rainy-Days/searchHistory.json';
 
 // Define City class
 class City {
   constructor(public name: string, public id: string) {}
 }
+
+export interface HistoryEntry {
+    id: string;
+    timestamp: Date;
+    query: string;
+    result: any;
+}
+
+// This is a simple in-memory store - you might want to replace this with a database
+let history: HistoryEntry[] = [];
+
+export const addToHistory = (entry: Omit<HistoryEntry, 'id'>) => {
+    const newEntry: HistoryEntry = {
+        ...entry,
+        id: String(Date.now())
+    };
+    history.push(newEntry);
+    return newEntry;
+};
+
+export const getHistory = async (): Promise<HistoryEntry[]> => {
+    return history;
+};
+
+export const removeFromHistory = async (id: string): Promise<void> => {
+    history = history.filter(entry => entry.id !== id);
+};
 
 export default class HistoryService {
   private static async read(): Promise<City[]> {

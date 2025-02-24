@@ -1,16 +1,20 @@
 import { Router } from 'express';
+import { getHistory, HistoryEntry, removeFromHistory } from '../../service/historyService.js';
+
 const router = Router();
 
-import HistoryService from '../../service/historyService.js';
+// Add logging to verify route handler is registered
+console.log('Registering history routes...');
 
 // GET: Fetch all search history
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
+  console.log('GET /api/history called');
   try {
-    const cities = await HistoryService.getCities();
-    res.json(cities);
+    const history = await getHistory();
+    res.json(history);
   } catch (error) {
-    console.error('Error retrieving history:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error in GET /api/history:', error);
+    res.status(500).json({ error: 'Failed to fetch history' });
   }
 });
 
@@ -24,12 +28,14 @@ router.delete('/:id', async (req, res) => {
       return res.status(400).json({ error: 'City ID is required' });
     }
 
-     // Check if the city exists before deletion
-     const city = await HistoryService.getCityById(id);
-     if (city === null || city === undefined) {
-       return res.status(404).json({ error: 'City not found' });
-     }
-    await HistoryService.removeCity(id);
+    // Check if the city exists before deletion
+    const history = await getHistory();
+    const city = history.find((entry: HistoryEntry) => entry.id === id);
+    if (!city) {
+      return res.status(404).json({ error: 'City not found' });
+    }
+
+    await removeFromHistory(id);
     res.json({ message: 'City removed from history' });
 
   } catch (error) {
@@ -37,5 +43,7 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+console.log('History routes registered');
 
 export default router;

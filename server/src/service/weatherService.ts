@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "url";
 import fs from "node:fs/promises";
 import dotenv from 'dotenv';
+import axios from 'axios';
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +30,20 @@ interface LocationApiResponse {
   lat: number;
   lon: number;
   name: string;
+}
+
+interface WeatherData {
+    currentWeather: {
+        city: string;
+        temperature: number;
+        description: string;
+        icon: string;
+    };
+    forecast: Array<{
+        temperature: number;
+        description: string;
+        icon: string;
+    }>;
 }
 
 class WeatherService {
@@ -121,6 +136,31 @@ class WeatherService {
     } catch (error) {
       console.error('Error in getWeatherForCity:', error);
       throw error;
+    }
+  }
+
+  async getWeatherData(city: string): Promise<WeatherData> {
+    try {
+      const coordinates = await this.fetchAndDestructureLocationData(city);
+      const currentWeather = await this.fetchCurrentWeather(coordinates);
+      const forecast = await this.fetchForecast(coordinates);
+      
+      return {
+        currentWeather: {
+          city,
+          temperature: currentWeather.temperature,
+          description: currentWeather.description,
+          icon: currentWeather.icon
+        },
+        forecast: forecast.map(f => ({
+          temperature: f.temperature,
+          description: f.description,
+          icon: f.icon
+        }))
+      };
+    } catch (error) {
+      console.error('Error in getWeatherData:', error);
+      throw new Error('Failed to fetch weather data');
     }
   }
 }
