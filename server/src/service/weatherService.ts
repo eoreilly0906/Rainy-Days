@@ -39,6 +39,7 @@ class WeatherService {
   private async fetchLocationData(city: string): Promise<LocationApiResponse> {
     try {
       const response = await fetch(`http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${this.apiKey}`);
+      console.log("HERE")
       if (!response.ok) throw new Error(`Failed to fetch location: ${response.statusText}`);
       const data = await response.json();
       if (!data.length) throw new Error(`No location found for: ${city}`);

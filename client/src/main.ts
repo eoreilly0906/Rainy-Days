@@ -37,7 +37,10 @@ const fetchWeather = async (cityName: string) => {
     return;
   }
 
-  const response = await fetch('http://localhost:3001/api/weather', {
+  // http://api.openweathermap.org/geo/1.0/direct?q={city name},{state code},{country code}&limit={limit}&appid={API key}
+  // http://api.openweathermap.org/geo/1.0/direct?q=London&limit=5&appid={API key}
+
+  const response = await fetch('/api/weather', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -346,35 +349,70 @@ function showError(message: string) {
 // Single declaration of checkWeatherAPI
 export const checkWeatherAPI = () => {
   const apiUrl = '/api/weather';
+  console.log('Fetching from:', apiUrl);
+
   fetch(apiUrl)
     .then(response => {
+      // Log the response headers and type
+      console.log('Response headers:', response.headers);
+      console.log('Content type:', response.headers.get('content-type'));
+
+      // Check if response is OK
       if (!response.ok) {
-        throw new Error(
-          response.status === 404 ? 'Resource not found' :
-          response.status === 403 ? 'Access denied' :
-          response.status === 500 ? 'Server error' :
-          `HTTP error! status: ${response.status}`
-        );
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      if (response.headers.get('content-type')?.indexOf('application/json') === -1) {
-        throw new Error('Invalid response format');
+
+      // Check content type before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON but got ${contentType}`);
       }
+
       return response.json();
     })
     .then(data => {
+      console.log('Received data:', data);
       if (!data) {
         throw new Error('No data received');
       }
       try {
-        const { currentWeather, forecast } = data;
-        console.log({ currentWeather, forecast });
+        const { 
+          city: {
+            name,
+            coord: { lat, lon },
+            country,
+            population,
+            sunrise,
+            sunset
+          }
+        } = data;
+
+        // Log the extracted values
+        console.log('Extracted values:', { name, lat, lon, country, population, sunrise, sunset });
+
+        // Check if elements exist before updating
+        const cityNameEl = document.getElementById('cityName');
+        const coordinatesEl = document.getElementById('coordinates');
+        const populationEl = document.getElementById('population');
+        const sunTimesEl = document.getElementById('sunTimes');
+
+        if (!cityNameEl || !coordinatesEl || !populationEl || !sunTimesEl) {
+          throw new Error('Required DOM elements not found');
+        }
+
+        cityNameEl.textContent = `${name}, ${country}`;
+        coordinatesEl.textContent = `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`;
+        populationEl.textContent = `Population: ${population.toLocaleString()}`;
+        const sunriseTime = new Date(sunrise * 1000).toLocaleTimeString();
+        const sunsetTime = new Date(sunset * 1000).toLocaleTimeString();
+        sunTimesEl.textContent = `Sunrise: ${sunriseTime} | Sunset: ${sunsetTime}`;
       } catch (err) {
         throw new Error('Invalid data format');
       }
     })
     .catch(error => {
-      console.error('Error:', error);
-      showError(error.message || 'An error occurred while fetching data');
+      console.error('Fetch error:', error);
+      showError(`Failed to fetch data: ${error.message}`);
     });
 };
 

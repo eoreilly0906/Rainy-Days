@@ -4,7 +4,7 @@ import HistoryService from '../../service/historyService.js';
 
 const router = Router();
 
-router.post('/api/weather', async (req, res) => {
+router.post('/weather', async (req, res) => {
   console.log("Received request body:", req.body);
   const { city } = req.body;
 
@@ -13,9 +13,9 @@ router.post('/api/weather', async (req, res) => {
   }
 
   try {
-    const weatherService = new WeatherService(); // Create instance
+    const weatherService = new WeatherService();
     const weatherData = await weatherService.getWeatherForCity(city);
-    console.log("Weather data to send:", weatherData); // Log what we're sending
+    console.log("Weather data to send:", weatherData);
     await HistoryService.addCity(city);
     res.json(weatherData);
   } catch (error: unknown) {
@@ -27,4 +27,5 @@ router.post('/api/weather', async (req, res) => {
     }
   }
 });
+
 export default router;

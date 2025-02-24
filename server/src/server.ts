@@ -24,31 +24,26 @@ const PORT = process.env.PORT || 3001;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-try {
-  // Middleware
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));        
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));        
 
-  // API routes
-  app.use('/api', weatherRoutes);
-  app.use('/api', historyRoutes);
-  app.use('/api', htmlRoutes);
+// API routes
+app.use('/api', weatherRoutes);
+app.use('/api', historyRoutes);
+app.use('/api', htmlRoutes);
 
-  // Serve static files
-  app.use(express.static(path.join(__dirname, '../../client/dist')));
+// Serve static files
+app.use(express.static(path.join(__dirname, '../../client/dist')));
 
-  // Error handling middleware
-  app.use((err: any, req: any, res: any, next: any) => {
-    console.error('Server Error:', err);
-    res.status(500).json({ error: err.message || 'Internal Server Error' });
-  });
+// Error handling middleware
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('Server Error:', err);
+  res.status(500).json({ error: err.message || 'Internal Server Error' });
+});
 
-  // Start the server
-  app.listen(PORT, () => {
-    console.log(`Server is running at http://localhost:${PORT}`);
-    console.log('API endpoints available at /api/*');
-  });
-} catch (error) {
-  console.error('Server startup error:', error);
-  process.exit(1);
-}
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+  console.log('API endpoints available at /api/*');
+});
